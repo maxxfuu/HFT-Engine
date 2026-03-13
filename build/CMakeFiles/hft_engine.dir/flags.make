@@ -6,5 +6,7 @@ CXX_DEFINES =
 
 CXX_INCLUDES = -I/Users/maxfu/Desktop/Code/Quant/HFT-System/include
 
-CXX_FLAGS = -std=c++17 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.1.sdk
+CXX_FLAGSarm64 = -std=c++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.1.sdk
+
+CXX_FLAGS = -std=c++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.1.sdk
 
