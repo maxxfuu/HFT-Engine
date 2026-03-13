@@ -40,10 +40,12 @@ class OrderBook {
     struct OrderLocation {
       Trading::PRICE price;
       Side side; 
-      std::list<Order>::iterator iter;
+      std::list<Order>::iterator itr;
     };
 
+    // stores key: id, value: struct Price Side
     std::unordered_map<uint64_t, OrderLocation> order_lookup;
+
     // internal helper functions after dispatch
     void addOrder(Order& order);
 
