@@ -20,11 +20,11 @@ class OrderBook {
     void handleOrder(Order& order);
     void cancelOrder(int64_t id);
 
-    Trading::PRICE getBestBid(const Order& order) {
+    Trading::PRICE getBestBid() {
       return bids.empty() ? 0 : bids.begin()->first;
     }
 
-    Trading::PRICE getBestAsk(const Order& order) {
+    Trading::PRICE getBestAsk() {
       return asks.empty() ? 0 : asks.begin()->first; 
     }
 

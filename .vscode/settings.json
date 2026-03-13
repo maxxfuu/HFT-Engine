@@ -2,6 +2,7 @@
   "files.associations": {
     "*.ejs": "html",
     "unordered_map": "cpp",
-    "deque": "cpp"
+    "deque": "cpp",
+    "iostream": "cpp"
   }
 }
