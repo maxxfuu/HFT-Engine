@@ -24,3 +24,6 @@ add_executable(hft_engine
 # 5. Enable Threading (Required for Step 4 & 5)
 find_package(Threads REQUIRED)
 target_link_libraries(hft_engine PRIVATE Threads::Threads)
+
+# 6. Add Compiler Flags
+target_compile_options(hft_engine PRIVATE -O3 -march=native)

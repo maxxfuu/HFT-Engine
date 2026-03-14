@@ -29,7 +29,9 @@ class OrderBook {
     }
 
   private:
+    // high to low price level 
     std::map<Trading::PRICE, PriceLevel, std::greater<Trading::PRICE>> bids;
+    // low to high price level  
     std::map<Trading::PRICE, PriceLevel> asks;
 
     // top of book 
