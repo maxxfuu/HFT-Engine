@@ -1,8 +1,0 @@
-{
-  "files.associations": {
-    "*.ejs": "html",
-    "unordered_map": "cpp",
-    "deque": "cpp",
-    "iostream": "cpp"
-  }
-}
