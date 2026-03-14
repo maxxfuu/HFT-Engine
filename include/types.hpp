@@ -36,12 +36,10 @@ struct alignas(64) Order {
   // Automated padding to ensure 64 bytes cache line alignment
   char padding[64 - sizeof(uint64_t) - sizeof(Trading::PRICE) - sizeof(Trading::TIMESTAMP) - sizeof(Trading::QUANTITY) - sizeof(Trading::SYMBOL_ID) - sizeof(Side) - sizeof(OrderType)];
 
-  static Order Create(Trading::PRICE price, Trading::QUANTITY quantity, 
-                      Trading::SYMBOL_ID symbol_id, Side side, OrderType type,
-                      uint64_t id, Trading::TIMESTAMP timestamp) {
-
+  static Order Create(Trading::PRICE price, Trading::QUANTITY quantity, Trading::SYMBOL_ID symbol_id, Side side, OrderType type, uint64_t id, Trading::TIMESTAMP timestamp) {
     // perform value initalization to prevent garbage values left over in RAM 
     Order order{};
+
     order.id = id;
     order.price = price;
     order.timestamp = timestamp;
@@ -51,4 +49,13 @@ struct alignas(64) Order {
     order.type = type;
     return order;
     };
+};
+
+struct alignas(64) Trade {
+  uint64_t trade_id;
+  uint64_t buyer_order_id;
+  uint64_t seller_order_id;
+  Trading::PRICE price;
+  Trading::QUANTITY quantity;
+  Trading::TIMESTAMP timestamp_ns;
 };
