@@ -1,6 +1,9 @@
 build/
 cmake-build-*/
 vscode/
+.vscode/
+market_data.csv
+__pycache__/
 
 CMakeFiles/
 CMakeCache.txt
