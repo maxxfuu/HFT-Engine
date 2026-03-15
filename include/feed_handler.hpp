@@ -1,6 +1,6 @@
 #pragma once
 
-#include "orderbook.hpp"
+#include "ring_buffer.hpp"
 
 #include <cerrno>
 #include <chrono>
@@ -12,11 +12,16 @@
 #include <string>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <thread>
 #include <unistd.h>
 
+template <size_t QueueSize>
 class FeedHandler {
  public:
-  void readAndProcess(const std::string& filename, OrderBook& book) const {
+  explicit FeedHandler(RingBuffer<Order, QueueSize>& inbound_queue)
+      : inbound_queue_(inbound_queue) {}
+
+  void readAndProcess(const std::string& filename) const {
     const int fd = ::open(filename.c_str(), O_RDONLY);
     if (fd < 0) {
       std::cerr << "Failed to open CSV file: " << filename << " ("
@@ -63,7 +68,7 @@ class FeedHandler {
           continue;
         }
 
-        book.handleOrder(order);
+        pushOrder(order);
         ++processed_orders;
       }
 
@@ -87,6 +92,12 @@ class FeedHandler {
   }
 
  private:
+  void pushOrder(const Order& order) const {
+    while (!inbound_queue_.push(order)) {
+      std::this_thread::yield();
+    }
+  }
+
   static bool parseLine(const char*& current, const char* end, Order& order) {
     uint64_t id = 0;
     Side side{};
@@ -306,4 +317,6 @@ class FeedHandler {
 
     return false;
   }
+
+  RingBuffer<Order, QueueSize>& inbound_queue_;
 };
