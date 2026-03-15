@@ -1,5 +1,6 @@
 #pragma once
 
+#include "logger.hpp"
 #include "ring_buffer.hpp"
 
 #include <cerrno>
@@ -9,6 +10,7 @@
 #include <fcntl.h>
 #include <iostream>
 #include <limits>
+#include <sstream>
 #include <string>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -22,17 +24,18 @@ class FeedHandler {
       : inbound_queue_(inbound_queue) {}
 
   void readAndProcess(const std::string& filename) const {
+    Logger::info("FeedHandler opening input file: ", filename);
     const int fd = ::open(filename.c_str(), O_RDONLY);
     if (fd < 0) {
-      std::cerr << "Failed to open CSV file: " << filename << " ("
-                << std::strerror(errno) << ")\n";
+      Logger::error("Failed to open CSV file: ", filename, " (",
+                    std::strerror(errno), ")");
       return;
     }
 
     struct stat file_stat {};
     if (::fstat(fd, &file_stat) != 0) {
-      std::cerr << "Failed to stat CSV file: " << filename << " ("
-                << std::strerror(errno) << ")\n";
+      Logger::error("Failed to stat CSV file: ", filename, " (",
+                    std::strerror(errno), ")");
       ::close(fd);
       return;
     }
@@ -46,8 +49,8 @@ class FeedHandler {
       void* mapped =
           ::mmap(nullptr, file_size, PROT_READ, MAP_PRIVATE, fd, 0);
       if (mapped == MAP_FAILED) {
-        std::cerr << "Failed to mmap CSV file: " << filename << " ("
-                  << std::strerror(errno) << ")\n";
+        Logger::error("Failed to mmap CSV file: ", filename, " (",
+                      std::strerror(errno), ")");
         ::close(fd);
         return;
       }
@@ -70,6 +73,10 @@ class FeedHandler {
 
         pushOrder(order);
         ++processed_orders;
+
+        if (processed_orders % 250000 == 0) {
+          Logger::info("FeedHandler enqueued ", processed_orders, " orders so far");
+        }
       }
 
       ::munmap(mapped, file_size);
@@ -83,12 +90,13 @@ class FeedHandler {
     const double throughput =
         seconds > 0.0 ? static_cast<double>(processed_orders) / seconds : 0.0;
 
-    std::cout << "Ingested " << processed_orders << " orders in " << seconds
-              << " seconds. Throughput: " << throughput << " orders/sec";
+    std::ostringstream summary;
+    summary << "Ingested " << processed_orders << " orders in " << seconds
+            << " seconds. Throughput: " << throughput << " orders/sec";
     if (skipped_lines > 0) {
-      std::cout << " (" << skipped_lines << " skipped lines)";
+      summary << " (" << skipped_lines << " skipped lines)";
     }
-    std::cout << '\n';
+    Logger::info(summary.str());
   }
 
  private:

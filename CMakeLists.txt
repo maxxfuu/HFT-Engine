@@ -18,7 +18,7 @@ include_directories(include)
 add_executable(hft_engine
     src/main.cpp
     src/orderbook.cpp
-    src/engine.cpp
+    src/matching_engine.cpp
 )
 
 # 5. Enable Threading (Required for Step 4 & 5)

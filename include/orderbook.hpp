@@ -1,11 +1,13 @@
-#ifndef ORDERBOOK_HPP
-#define ORDERBOOK_HPP
+#pragma once
 
 #include "types.hpp"
-#include <map>
-#include <unordered_map>
+
+#include <cstdint>
+#include <functional>
 #include <list> 
-#include <deque>
+#include <map>
+#include <vector>
+#include <unordered_map>
 
 // holds all orders within the price level
 struct PriceLevel {
@@ -17,7 +19,7 @@ struct PriceLevel {
 
 class OrderBook {
   public:
-    void handleOrder(Order& order);
+    std::vector<Trade> handleOrder(const Order& order);
     void cancelOrder(int64_t id);
 
     Trading::PRICE getBestBid() {
@@ -49,8 +51,13 @@ class OrderBook {
     std::unordered_map<uint64_t, OrderLocation> order_lookup;
 
     // internal helper functions after dispatch
-    void addOrder(Order& order);
+    void addOrder(const Order& order);
+    std::vector<Trade> handleLimitOrder(const Order& order);
+    void matchBuyOrder(Order& order, std::vector<Trade>& trades);
+    void matchSellOrder(Order& order, std::vector<Trade>& trades);
+    void updateBestBid();
+    void updateBestAsk();
+
+    uint64_t next_trade_id_ = 1;
 
 };
-
-#endif
