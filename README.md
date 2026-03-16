@@ -1,4 +1,4 @@
-# HFT Matching Engine
+# 📈 HFT Matching Engine
 
 This project is a C++17 event-driven matching engine prototype built around a price-time-priority limit order book. It ingests raw order flow from a CSV feed, parses each record into an `Order`, routes by `symbol_id`, matches resting liquidity, and emits `Trade` objects through an outbound queue.
 
