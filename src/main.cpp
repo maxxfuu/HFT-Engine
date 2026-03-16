@@ -1,14 +1,12 @@
 #include "feed_handler.hpp"
-#include "logger.hpp"
 #include "matching_engine.hpp"
 
 #include <atomic>
 #include <cstddef>
+#include <iostream>
 #include <thread>
 
 int main() {
-    Logger::initializeFromEnv();
-
     RingBuffer<Order, Trading::INBOUND_QUEUE_SIZE> inbound_queue;
     RingBuffer<Trade, Trading::OUTBOUND_QUEUE_SIZE> outbound_queue;
     FeedHandler<Trading::INBOUND_QUEUE_SIZE> handler(inbound_queue);
@@ -23,11 +21,6 @@ int main() {
         while (true) {
             if (outbound_queue.pop(trade)) {
                 ++local_emitted_trades;
-
-                if (local_emitted_trades % 250000 == 0) {
-                    Logger::info("Trade consumer drained ", local_emitted_trades,
-                                 " trades so far");
-                }
                 continue;
             }
 
@@ -39,19 +32,18 @@ int main() {
         }
 
         emitted_trades.store(local_emitted_trades, std::memory_order_release);
-        Logger::info("Trade consumer exiting after draining ",
-                     local_emitted_trades, " trades");
     });
 
-    Logger::info("Starting order blast");
+    std::cout << "Starting order blast..." << std::endl;
     engine.start();
     handler.readAndProcess("market_data.csv");
     engine.stop();
     engine_finished.store(true, std::memory_order_release);
     trade_logger.join();
 
-    Logger::info("Run complete. Emitted ", emitted_trades.load(std::memory_order_acquire),
-                 " trades.");
+    std::cout << "Summary: emitted "
+              << emitted_trades.load(std::memory_order_acquire)
+              << " trades." << std::endl;
 
     return 0;
 }
