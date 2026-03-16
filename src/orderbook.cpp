@@ -3,11 +3,13 @@
 #include <algorithm>
 
 std::vector<Trade> OrderBook::handleOrder(const Order& order) {
-  if (order.type != OrderType::LIMIT) {
+  if (order.type == OrderType::LIMIT) {
+    return handleLimitOrder(order);
+  } else if (order.type == OrderType::MARKET) {
+    return handleMarketOrder(order);
+  } else {
     return {};
   }
-
-  return handleLimitOrder(order);
 }
 
 std::vector<Trade> OrderBook::handleLimitOrder(const Order& order) {
@@ -15,9 +17,9 @@ std::vector<Trade> OrderBook::handleLimitOrder(const Order& order) {
   std::vector<Trade> trades;
 
   if (working_order.side == Side::BUY) {
-    matchBuyOrder(working_order, trades);
+    matchBuyLimitOrder(working_order, trades);
   } else {
-    matchSellOrder(working_order, trades);
+    matchSellLimitOrder(working_order, trades);
   }
 
   if (working_order.quantity > 0) {
@@ -27,7 +29,20 @@ std::vector<Trade> OrderBook::handleLimitOrder(const Order& order) {
   return trades;
 }
 
-void OrderBook::matchBuyOrder(Order& order, std::vector<Trade>& trades) {
+std::vector<Trade> OrderBook::handleMarketOrder(const Order& order) {
+  Order working_order = order;
+  std::vector<Trade> trades;
+  
+  if (working_order.side == Side::BUY) {
+    matchBuyMarketOrder(working_order, trades);
+  } else {
+    matchSellMarketOrder(working_order, trades);
+  }
+
+  return trades;
+}
+
+void OrderBook::matchBuyLimitOrder(Order& order, std::vector<Trade>& trades) {
   while (order.quantity > 0 && !asks.empty()) {
     auto level_itr = asks.begin();
     if (level_itr->first > order.price) {
@@ -61,7 +76,7 @@ void OrderBook::matchBuyOrder(Order& order, std::vector<Trade>& trades) {
   updateBestAsk();
 }
 
-void OrderBook::matchSellOrder(Order& order, std::vector<Trade>& trades) {
+void OrderBook::matchSellLimitOrder(Order& order, std::vector<Trade>& trades) {
   while (order.quantity > 0 && !bids.empty()) {
     auto level_itr = bids.begin();
     if (level_itr->first < order.price) {
@@ -69,6 +84,68 @@ void OrderBook::matchSellOrder(Order& order, std::vector<Trade>& trades) {
     }
 
     auto& level = level_itr->second;
+    while (order.quantity > 0 && !level.orders.empty()) {
+      Order& resting = level.orders.front();
+      const Trading::QUANTITY executed_quantity =
+          std::min(order.quantity, resting.quantity);
+
+      trades.push_back(Trade{next_trade_id_++, resting.id, order.id,
+                             resting.price, executed_quantity, order.timestamp});
+
+      order.quantity -= executed_quantity;
+      resting.quantity -= executed_quantity;
+      level.quantity -= executed_quantity;
+
+      if (resting.quantity == 0) {
+        order_lookup.erase(resting.id);
+        level.orders.pop_front();
+      }
+    }
+
+    if (level.orders.empty()) {
+      bids.erase(level_itr);
+    }
+  }
+
+  updateBestBid();
+}
+
+void OrderBook::matchBuyMarketOrder(Order& order, std::vector<Trade>& trades) {
+  while (order.quantity > 0 && !asks.empty()) {
+    auto level_itr = asks.begin();
+    auto& level = level_itr->second;
+
+    while (order.quantity > 0 && !level.orders.empty()) {
+      Order& resting = level.orders.front();
+      const Trading::QUANTITY executed_quantity =
+          std::min(order.quantity, resting.quantity);
+
+      trades.push_back(Trade{next_trade_id_++, order.id, resting.id,
+                             resting.price, executed_quantity, order.timestamp});
+
+      order.quantity -= executed_quantity;
+      resting.quantity -= executed_quantity;
+      level.quantity -= executed_quantity;
+      
+      if (resting.quantity == 0) {
+        order_lookup.erase(resting.id);
+        level.orders.pop_front();
+      }
+    }
+
+    if (level.orders.empty()) {
+      asks.erase(level_itr);
+    }
+  }
+
+  updateBestAsk();
+}
+
+void OrderBook::matchSellMarketOrder(Order& order, std::vector<Trade>& trades) {
+  while (order.quantity > 0 && !bids.empty()) {
+    auto level_itr = bids.begin();
+    auto& level = level_itr->second;
+
     while (order.quantity > 0 && !level.orders.empty()) {
       Order& resting = level.orders.front();
       const Trading::QUANTITY executed_quantity =

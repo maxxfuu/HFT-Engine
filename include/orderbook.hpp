@@ -53,8 +53,14 @@ class OrderBook {
     // internal helper functions after dispatch
     void addOrder(const Order& order);
     std::vector<Trade> handleLimitOrder(const Order& order);
-    void matchBuyOrder(Order& order, std::vector<Trade>& trades);
-    void matchSellOrder(Order& order, std::vector<Trade>& trades);
+    std::vector<Trade> handleMarketOrder(const Order& order);
+    
+    void matchBuyLimitOrder(Order& order, std::vector<Trade>& trades);
+    void matchSellLimitOrder(Order& order, std::vector<Trade>& trades);
+
+    void matchBuyMarketOrder(Order& order, std::vector<Trade>& trades);
+    void matchSellMarketOrder(Order& order, std::vector<Trade>& trades);
+
     void updateBestBid();
     void updateBestAsk();
 
